@@ -28,13 +28,28 @@ def make_text_encoder(model: str) -> Embeddings:
 def make_weaviate_retriever(
     configuration: BaseConfiguration, embedding_model: Embeddings
 ) -> Iterator[BaseRetriever]:
-    with weaviate.connect_to_weaviate_cloud(
-        cluster_url=os.environ["WEAVIATE_URL"],
-        auth_credentials=weaviate.classes.init.Auth.api_key(
-            os.environ.get("WEAVIATE_API_KEY", "not_provided")
-        ),
-        skip_init_checks=True,
-    ) as weaviate_client:
+    # Auto-detect local vs cloud Weaviate based on URL
+    weaviate_url = os.environ["WEAVIATE_URL"]
+    is_local = "localhost" in weaviate_url or "127.0.0.1" in weaviate_url
+
+    if is_local:
+        # Connect to local Weaviate (Docker)
+        from urllib.parse import urlparse
+        parsed = urlparse(weaviate_url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 8080
+        weaviate_client = weaviate.connect_to_local(host=host, port=port)
+    else:
+        # Connect to Weaviate Cloud
+        weaviate_client = weaviate.connect_to_weaviate_cloud(
+            cluster_url=weaviate_url,
+            auth_credentials=weaviate.classes.init.Auth.api_key(
+                os.environ.get("WEAVIATE_API_KEY", "not_provided")
+            ),
+            skip_init_checks=True,
+        )
+
+    with weaviate_client:
         store = WeaviateVectorStore(
             client=weaviate_client,
             index_name=WEAVIATE_GENERAL_GUIDES_AND_TUTORIALS_INDEX_NAME,
