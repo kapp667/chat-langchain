@@ -7,6 +7,7 @@ from typing import Optional
 
 import weaviate
 from bs4 import BeautifulSoup, SoupStrainer
+from dotenv import load_dotenv
 from langchain.document_loaders import SitemapLoader
 from langchain.indexes import SQLRecordManager, index
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -16,11 +17,14 @@ from backend.constants import WEAVIATE_GENERAL_GUIDES_AND_TUTORIALS_INDEX_NAME
 from backend.embeddings import get_embeddings_model
 from backend.parser import langchain_docs_extractor
 
+# Load environment variables from .env file
+load_dotenv()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 WEAVIATE_URL = os.environ["WEAVIATE_URL"]
-WEAVIATE_API_KEY = os.environ["WEAVIATE_API_KEY"]
+WEAVIATE_API_KEY = os.environ.get("WEAVIATE_API_KEY")  # Optional for local Weaviate
 RECORD_MANAGER_DB_URL = os.environ["RECORD_MANAGER_DB_URL"]
 
 
@@ -119,11 +123,29 @@ def ingest_docs():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
     embedding = get_embeddings_model()
 
-    with weaviate.connect_to_weaviate_cloud(
-        cluster_url=WEAVIATE_URL,
-        auth_credentials=weaviate.classes.init.Auth.api_key(WEAVIATE_API_KEY),
-        skip_init_checks=True,
-    ) as weaviate_client:
+    # Auto-detect local vs cloud Weaviate based on URL
+    is_local = "localhost" in WEAVIATE_URL or "127.0.0.1" in WEAVIATE_URL
+
+    if is_local:
+        # Connect to local Weaviate (Docker)
+        # Extract host and port from URL (e.g., "http://localhost:8088" -> host="localhost", port=8088)
+        from urllib.parse import urlparse
+        parsed = urlparse(WEAVIATE_URL)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 8080
+
+        logger.info(f"Connecting to LOCAL Weaviate at {host}:{port}")
+        weaviate_client = weaviate.connect_to_local(host=host, port=port)
+    else:
+        # Connect to Weaviate Cloud
+        logger.info(f"Connecting to Weaviate CLOUD at {WEAVIATE_URL}")
+        weaviate_client = weaviate.connect_to_weaviate_cloud(
+            cluster_url=WEAVIATE_URL,
+            auth_credentials=weaviate.classes.init.Auth.api_key(WEAVIATE_API_KEY),
+            skip_init_checks=True,
+        )
+
+    with weaviate_client:
         # General Guides and Tutorials
         general_guides_and_tutorials_vectorstore = WeaviateVectorStore(
             client=weaviate_client,
