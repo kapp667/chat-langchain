@@ -10,8 +10,11 @@ import {
 } from "./ui/select";
 
 const modelOptionsAndLabels: Partial<Record<ModelOptions, string>> = {
-  "anthropic/claude-3-5-haiku-20241022": "Claude 3.5 Haiku",
+  "openai/gpt-5": "GPT-5",
+  "openai/gpt-5-mini": "GPT-5 Mini",
+  "openai/gpt-5-nano": "GPT-5 Nano",
   "openai/gpt-4.1-mini": "GPT 4.1 Mini",
+  "anthropic/claude-3-5-haiku-20241022": "Claude 3.5 Haiku",
   "google_genai/gemini-2.0-flash": "Gemini 2.0 Flash",
 };
 
@@ -23,7 +26,7 @@ export function SelectModelComponent() {
     <Select
       onValueChange={(v) => setSelectedModel(v as ModelOptions)}
       value={selectedModel}
-      defaultValue="anthropic/claude-3-5-haiku-20241022"
+      defaultValue="openai/gpt-5"
     >
       <SelectTrigger className="w-[180px] border-gray-600 text-gray-200">
         <SelectValue placeholder="Model" />
