@@ -330,6 +330,62 @@ client.close()  # Important: explicit close in v4
 - ✅ Full self-hosting capability (no paid cloud dependencies)
 - ✅ Maintainable codebase with modern dependencies
 
+### Issue 3: LangSmith API 403 Forbidden (RESOLVED - October 1, 2025)
+
+**Problem:** LangSmith API returns 403 Forbidden errors for both Personal Access Tokens and Service Keys on the Developer Free tier.
+
+**Symptoms:**
+```
+HTTP Request: POST https://api.smith.langchain.com/v1/metadata/submit "HTTP/1.1 403 Forbidden"
+LangChain metadata submission failed.
+Failed to POST https://api.smith.langchain.com/runs/multipart
+```
+
+**Root Cause Investigation:**
+1. **Tested Personal Access Token** (`lsv2_pt_*`): 403 Forbidden
+   - Personal tokens inherit user permissions
+   - Limited permissions on free tier
+
+2. **Created Service Key** (`lsv2_sk_*`): 403 Forbidden
+   - Service Keys should have admin privileges
+   - Still returned 403 Forbidden
+
+3. **Added LANGSMITH_WORKSPACE_ID=1**: 403 Forbidden
+   - Variable exists in official documentation: "LANGSMITH_WORKSPACE_ID (required for keys scoped to multiple workspaces)"
+   - Did not resolve the issue
+
+**Root Cause:** Developer Free tier (5k traces/month) appears to have API write limitations. Both Personal Access Tokens and Service Keys return 403 Forbidden when attempting to submit traces via the API, even with correct workspace configuration.
+
+**Solution: Disable LangSmith Tracing**
+
+LangSmith is **not required** for chat-langchain functionality:
+- LangSmith provides observability (trace visualization, debugging)
+- The core chat system works perfectly without it
+- All intelligence features (retrieval, generation, routing) are independent
+
+**Configuration:**
+```bash
+# In .env file
+LANGCHAIN_TRACING_V2=false
+# Comment out all other LANGCHAIN_* variables
+```
+
+**Impact:**
+- ✅ No 403 errors in logs
+- ✅ System functions normally
+- ❌ No trace visualization in LangSmith UI (acceptable for local development)
+
+**Alternative Solutions (if LangSmith tracing is required):**
+1. Upgrade to a paid LangSmith plan (Plus $39/month or Enterprise)
+2. Use LangSmith's local tracing mode (if available)
+3. Implement custom logging/observability
+
+**Key Learnings:**
+- Personal Access Tokens vs Service Keys: Service Keys have higher privileges but may still be restricted on free tiers
+- LANGSMITH_WORKSPACE_ID is a real documented variable for multi-workspace scenarios
+- Free tier limitations may apply to API write operations even with valid credentials
+- LangSmith is optional for chat-langchain - it's purely for observability
+
 ## Investigation History & Decisions
 
 ### September 30, 2025: Initial Setup & Weaviate Cloud Compatibility Investigation
