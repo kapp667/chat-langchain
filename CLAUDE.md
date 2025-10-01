@@ -1094,3 +1094,112 @@ Stack running:
 3. OpenAI works as drop-in replacement for Anthropic (config parameter)
 4. langgraph dev requires Poetry environment isolation (not global install)
 5. Static prompts enable offline deployment and faster startup
+### October 1, 2025: GPT-5 Integration and API Testing Guide
+
+**Context:** User requested GPT-5 support and direct API testing capabilities.
+
+**GPT-5 Integration Completed:**
+
+1. **Model Support Added (commit 2106728):**
+   - `frontend/app/types.ts`: Added GPT-5 model types (gpt-5, gpt-5-mini, gpt-5-nano)
+   - `frontend/app/components/SelectModel.tsx`: Added GPT-5 to dropdown, set as default
+   - `backend/retrieval_graph/configuration.py`: Changed defaults to GPT-5
+
+2. **Temperature Fix (commit a56f446):**
+   - **Problem:** GPT-5 only supports `temperature=1` (default), not `temperature=0`
+   - **Error:** `BadRequestError: 'temperature' does not support 0.0 with this model`
+   - **Solution:** `backend/utils.py` line 80:
+     ```python
+     temperature = 1 if model.startswith("gpt-5") else 0
+     ```
+   - Automatic detection for all GPT-5 variants
+
+3. **OpenAI Organization Verification Required:**
+   - **Error:** `Your organization must be verified to stream this model`
+   - **Action required:** Visit https://platform.openai.com/settings/organization/general
+   - Click "Verify Organization", wait 15 minutes for propagation
+   - **Workaround:** Use GPT-4.1-Mini or Claude 3.5 Haiku until verified
+
+**API Testing Guide (Direct LangGraph API Access):**
+
+**Assistant ID (constant):**
+```
+eb6db400-e3c8-5d06-a834-015cb89efe69
+```
+
+**1. Create a thread:**
+```bash
+curl -X POST http://localhost:2024/threads \
+  -H 'Content-Type: application/json' \
+  -d '{"metadata":{"test":"manual"}}' | python3 -c "import sys,json; print(json.load(sys.stdin)['thread_id'])"
+```
+
+**2. Send question and stream response:**
+```bash
+THREAD_ID="<thread-id-from-step-1>"
+
+curl -X POST "http://localhost:2024/threads/${THREAD_ID}/runs/stream" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "input": {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Your question here"
+        }
+      ]
+    },
+    "config": {
+      "configurable": {
+        "query_model": "openai/gpt-5",
+        "response_model": "openai/gpt-5"
+      }
+    },
+    "stream_mode": ["values"],
+    "assistant_id": "eb6db400-e3c8-5d06-a834-015cb89efe69"
+  }' --no-buffer
+```
+
+**3. Alternative models (if GPT-5 requires verification):**
+```json
+"configurable": {
+  "query_model": "openai/gpt-4.1-mini",
+  "response_model": "openai/gpt-4.1-mini"
+}
+```
+
+Or:
+```json
+"configurable": {
+  "query_model": "anthropic/claude-3-5-haiku-20241022",
+  "response_model": "anthropic/claude-3-5-haiku-20241022"
+}
+```
+
+**Available Models:**
+- OpenAI: `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-4.1-mini`
+- Anthropic: `claude-3-5-haiku-20241022`
+- Google: `gemini-2.0-flash`
+
+**Backend Logs:**
+```bash
+tail -f /tmp/langgraph_dev.log
+```
+
+**Check for errors:**
+```bash
+tail -100 /tmp/langgraph_dev.log | grep -i error
+```
+
+**Status:**
+- ✅ GPT-5 models added to frontend and backend
+- ✅ Temperature=1 fix applied for GPT-5
+- ✅ API testing procedure documented
+- ⚠️ OpenAI organization verification needed for GPT-5 streaming
+- ✅ Fallback models (GPT-4.1-Mini, Claude) working
+
+**Next Steps:**
+1. Verify OpenAI organization (user action)
+2. Test GPT-5 streaming after verification
+3. Consider fallback to GPT-4.1-Mini if verification blocked
+
