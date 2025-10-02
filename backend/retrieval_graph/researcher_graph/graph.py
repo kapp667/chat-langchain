@@ -16,6 +16,7 @@ from backend import retrieval
 from backend.retrieval_graph.configuration import AgentConfiguration
 from backend.retrieval_graph.researcher_graph.state import QueryState, ResearcherState
 from backend.utils import load_chat_model
+from backend.deepseek_wrapper import generate_queries_deepseek, enhance_prompt_for_json
 
 
 async def generate_queries(
@@ -37,6 +38,26 @@ async def generate_queries(
         queries: list[str]
 
     configuration = AgentConfiguration.from_runnable_config(config)
+
+    # Special handling for DeepSeek models (require explicit JSON mode)
+    if "deepseek" in configuration.query_model.lower():
+        messages = [
+            {"role": "system", "content": configuration.generate_queries_system_prompt},
+            {"role": "human", "content": state.question},
+        ]
+        try:
+            response = await generate_queries_deepseek(
+                messages,
+                configuration.query_model,
+                Response
+            )
+            return {"queries": response["queries"]}
+        except Exception as e:
+            # Fallback: return original question as single query
+            print(f"DeepSeek query generation failed: {e}")
+            return {"queries": [state.question]}
+
+    # Standard logic for other models
     structured_output_kwargs = (
         {"method": "function_calling"} if "openai" in configuration.query_model else {}
     )

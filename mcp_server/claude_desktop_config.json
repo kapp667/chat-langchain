@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "langchain-expert": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/stephane/Documents/work/chat-langchain/mcp_server",
+        "run",
+        "--no-project",
+        "python",
+        "langchain_expert.py"
+      ],
+      "env": {
+        "LANGGRAPH_URL": "http://localhost:2024"
+      }
+    }
+  }
+}

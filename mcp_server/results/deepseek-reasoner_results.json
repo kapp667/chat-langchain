@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-10-02T15:44:12.410672",
+  "model_key": "deepseek-reasoner",
+  "model_name": "DeepSeek Reasoner",
+  "model_id": "deepseek/deepseek-reasoner",
+  "model_description": "DeepSeek V3.2-Exp (thinking mode with chain-of-thought)",
+  "langgraph_url": "http://localhost:2024",
+  "total_tests": 3,
+  "successful_tests": 3,
+  "failed_tests": 0,
+  "within_limit_tests": 3,
+  "statistics": {
+    "average_time": 9.077799081802368,
+    "min_time": 8.106969118118286,
+    "max_time": 10.807973146438599,
+    "average_minutes": 0.1512966513633728,
+    "min_minutes": 0.1351161519686381,
+    "max_minutes": 0.18013288577397665
+  },
+  "results": [
+    {
+      "test_id": "test_1_simple",
+      "complexity": "simple",
+      "question": "What is LangGraph and how does it differ from LangChain?",
+      "success": true,
+      "elapsed_time": 10.807973146438599,
+      "elapsed_minutes": 0.18013288577397665,
+      "within_limit": true,
+      "chunk_count": 2,
+      "response_length": 0,
+      "start_time": "2025-10-02T15:43:35.149852",
+      "end_time": "2025-10-02T15:43:45.957829",
+      "response_full": ""
+    },
+    {
+      "test_id": "test_2_moderate",
+      "complexity": "moderate",
+      "question": "Explain how LangGraph checkpoints work with PostgreSQL, including the AsyncPostgresSaver class and how to handle migration between checkpoint versions.",
+      "success": true,
+      "elapsed_time": 8.31845498085022,
+      "elapsed_minutes": 0.13864091634750367,
+      "within_limit": true,
+      "chunk_count": 2,
+      "response_length": 0,
+      "start_time": "2025-10-02T15:43:50.970932",
+      "end_time": "2025-10-02T15:43:59.289386",
+      "response_full": ""
+    },
+    {
+      "test_id": "test_3_complex",
+      "complexity": "complex",
+      "question": "Design a production-grade multi-agent LangGraph system with the following requirements: (1) human-in-the-loop approval for critical decisions, (2) PostgreSQL checkpoints for state persistence, (3) error recovery and retry logic, (4) observability with LangSmith, and (5) deployment strategy. Provide architectural decisions and code examples.",
+      "success": true,
+      "elapsed_time": 8.106969118118286,
+      "elapsed_minutes": 0.1351161519686381,
+      "within_limit": true,
+      "chunk_count": 2,
+      "response_length": 0,
+      "start_time": "2025-10-02T15:44:04.303670",
+      "end_time": "2025-10-02T15:44:12.410638",
+      "response_full": ""
+    }
+  ]
+}

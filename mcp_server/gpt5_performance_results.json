@@ -1,0 +1,46 @@
+{
+  "timestamp": "2025-10-02T13:49:13.964561",
+  "model": "openai/gpt-5-2025-08-07",
+  "langgraph_url": "http://localhost:2024",
+  "results": [
+    {
+      "test_id": "test_1_simple",
+      "complexity": "simple",
+      "success": true,
+      "elapsed_time": 116.44991278648376,
+      "elapsed_minutes": 1.9408318797747295,
+      "within_limit": true,
+      "chunk_count": 608,
+      "response_length": 2721,
+      "start_time": "2025-10-02T13:39:51.523854",
+      "end_time": "2025-10-02T13:41:47.973767",
+      "response_preview": "LangGraph is a low-level orchestration framework for building long-running, stateful agents by modeling your application as a graph of nodes (work) and edges (routing). LangChain is the broader framew..."
+    },
+    {
+      "test_id": "test_2_moderate",
+      "complexity": "moderate",
+      "success": true,
+      "elapsed_time": 181.5314199924469,
+      "elapsed_minutes": 3.025523666540782,
+      "within_limit": true,
+      "chunk_count": 813,
+      "response_length": 3604,
+      "start_time": "2025-10-02T13:41:52.987140",
+      "end_time": "2025-10-02T13:44:54.518560",
+      "response_preview": "- What checkpointing does in LangGraph\n  - Checkpointers persist graph state across steps and runs, enabling human-in-the-loop review/approval, conversation \u201cmemory\u201d across turns, time-travel/replay a..."
+    },
+    {
+      "test_id": "test_3_complex",
+      "complexity": "complex",
+      "success": true,
+      "elapsed_time": 254.43369698524475,
+      "elapsed_minutes": 4.240561616420746,
+      "within_limit": false,
+      "chunk_count": 3094,
+      "response_length": 13294,
+      "start_time": "2025-10-02T13:44:59.530030",
+      "end_time": "2025-10-02T13:49:13.963728",
+      "response_preview": "Below is a production-grade design for a multi-agent system in LangGraph that satisfies: (1) human-in-the-loop approvals, (2) PostgreSQL checkpoints, (3) error recovery and retry/fallback logic, (4) o..."
+    }
+  ]
+}

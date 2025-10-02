@@ -81,6 +81,11 @@ def load_chat_model(fully_specified_name: str) -> BaseChatModel:
     model_kwargs = {"temperature": temperature, "stream_usage": True}
     if provider == "google_genai":
         model_kwargs["convert_system_message_to_human"] = True
+
+    # Anthropic models require explicit max_tokens for long responses
+    if provider == "anthropic":
+        model_kwargs["max_tokens"] = 16384  # Support long, detailed responses
+
     return init_chat_model(model, model_provider=provider, **model_kwargs)
 
 
