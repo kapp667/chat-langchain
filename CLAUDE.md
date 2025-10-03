@@ -1444,4 +1444,92 @@ py-modules = ["langchain_expert"]
 - Added this investigation to CLAUDE.md
 - Committed fix with comprehensive message
 
+### October 3, 2025 (Continued): Strategic Model Standardization - Sonnet 4.5
+
+**Context:** After Phase 8 cleanup and MCP build fix, strategic question emerged: Should we standardize on Sonnet 4.5 for both MCP server and chat-langchain backend, based on benchmark findings?
+
+**Current Configuration (Before Change):**
+- Backend defaults: GPT-5 Mini (`openai/gpt-5-mini-2025-08-07`)
+- Location: `backend/retrieval_graph/configuration.py:17-29`
+- MCP server: Inherits backend configuration via LangGraph SDK
+
+**Benchmark Analysis Performed:**
+
+**1. Speed Comparison (240s MCP timeout)**:
+- GPT-5 Full: 255s avg → **TIMEOUT** on complex questions (431s)
+- GPT-5 Mini: 119s avg → Safe (79s margin)
+- **Sonnet 4.5: 35.6s avg** → **3.3× faster** (205s margin) ✅
+
+**2. Quality Validation (Latest tests - Oct 3)**:
+From `hero_vs_pragmatic_sonnet45_results.json`:
+- **6/6 questions successful** (trivial → ultra-complex)
+- Average response: 3,311 chars
+- Ultra-complex question (tree-of-thoughts planning): **5,734 chars in 47s** ✅
+- **Complete responses** (resolved previous incompleteness concerns)
+
+**3. Critical Discovery**:
+Old benchmark (Oct 2) showed incompleteness on complex questions, but **latest tests (Oct 3) show full, complete responses**. This suggests either:
+- Configuration improvement
+- Model version update (`claude-sonnet-4-5-20250929` latest)
+- Prompt engineering optimization
+
+**Decision Made: ADOPT SONNET 4.5 for BOTH systems**
+
+**Rationale:**
+1. **Speed**: 3.3× faster than GPT-5 Mini (35s vs 119s avg)
+2. **Quality**: 100% success rate, complete ultra-complex responses (5,734 chars)
+3. **Safety**: 85% timeout margin (vs 33% for GPT-5 Mini)
+4. **Consistency**: Same model across query + response = coherent behavior
+5. **Developer experience**: Sub-minute responses ideal for interactive MCP development
+
+**Implementation:**
+
+**Changes made:**
+```python
+# backend/retrieval_graph/configuration.py
+query_model: str = field(
+    default="anthropic/claude-sonnet-4-5-20250929",  # Changed from GPT-5 Mini
+    ...
+)
+
+response_model: str = field(
+    default="anthropic/claude-sonnet-4-5-20250929",  # Changed from GPT-5 Mini
+    ...
+)
+```
+
+**Validation Tests:**
+1. ✅ **Backend test** (`test_sonnet45_backend.py`):
+   - Complex question: 41.5s response, 4,243 chars
+   - Result: SUCCESS - Within performance targets
+
+2. ✅ **MCP server test** (`mcp_server/test_mcp_sonnet45.py`):
+   - Simple question: 28.5s response, 2,442 chars
+   - Result: CONFIRMED - MCP inherits Sonnet 4.5 correctly
+   - Backend → MCP inheritance: ✅ WORKING
+
+**Performance Metrics Achieved:**
+- Backend complex Q: 41.5s (target: <60s) ✅
+- MCP simple Q: 28.5s (Sonnet 4.5 benchmark: ~22-27s) ✅
+- Quality: 2,442-4,243 chars (excellent completeness) ✅
+
+**Cost Consideration:**
+- Monthly delta (Sonnet 4.5 vs GPT-5 Mini): ~$50-100 for SawUp team
+- **ROI**: Developer time saved (3.3× faster) >> cost increase
+- **Production quality**: Worth premium for both MCP development tool and knowledge base
+
+**Rollback Plan:**
+If issues arise:
+1. Revert `backend/retrieval_graph/configuration.py` to GPT-5 Mini (1 file)
+2. Document specific failure patterns
+3. Consider hybrid: GPT-5 Mini for query, Sonnet 4.5 for response
+
+**Documentation Updates:**
+- Updated CLAUDE.md with decision rationale
+- Updated QUICK_START.md default model info
+- Test files committed for validation reference
+
+**Key Lesson:**
+Empirical testing across complexity levels is essential. Latest benchmarks (Oct 3) showed Sonnet 4.5 handles ultra-complex questions completely, contradicting earlier incompleteness findings. **Always validate with latest model versions and configurations.**
+
 **Co-authored-by: Stéphane Wootha Richard <stephane@sawup.fr>**

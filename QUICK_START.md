@@ -153,7 +153,7 @@ Check LangChain expert status
 ```
 ✅ LangGraph Server: Connected (http://localhost:2024)
 ✅ Documents indexed: 15,061
-✅ Models available: GPT-5 mini (default), Claude Sonnet 4.5, DeepSeek, Llama 3.3 70B
+✅ Models available: Claude Sonnet 4.5 (default), GPT-5 mini, DeepSeek, Llama 3.3 70B
 ✅ Weaviate: Connected (15,061 vectors)
 ✅ PostgreSQL: Connected (checkpoints + record manager)
 ```
@@ -252,12 +252,12 @@ Le MCP server supporte plusieurs modèles LLM :
 
 | Modèle | Usage | Vitesse | Qualité |
 |--------|-------|---------|---------|
-| **GPT-5 mini** | Default (upstream) | 60s | 4/5 |
-| Claude Sonnet 4.5 | HERO (recommandé) | 35s | 5/5 ⭐ |
+| **Claude Sonnet 4.5** | Default (SawUp) ✅ | 35s | 5/5 ⭐ |
+| GPT-5 mini | Upstream default | 60s | 4/5 |
 | Llama 3.3 70B (Groq) | PRAGMATIC ultra-rapide | 9s | 4.6/5 |
 | DeepSeek Chat | Économique | 45s | 4.4/5 |
 
-> **Recommandation:** Configurer Sonnet 4.5 comme default pour qualité maximale (5/5). Qualité supérieure justifie le délai (voir [docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md](./docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md)). Configuration par défaut upstream utilise GPT-5 mini.
+> **Configuration actuelle:** Sonnet 4.5 configuré comme default (Oct 3, 2025) pour qualité maximale (5/5) et vitesse optimale (3.3× plus rapide que GPT-5 mini). Basé sur tests empiriques validant complétude des réponses sur questions ultra-complexes. Voir CLAUDE.md "Strategic Model Standardization" pour détails.
 
 ---
 
