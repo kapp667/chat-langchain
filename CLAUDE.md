@@ -31,6 +31,30 @@ This fork is being used for two purposes:
 - **Priority 3**: API endpoints compatible with custom frontends (enterprise use case)
 - **Not a priority**: Included Next.js frontend (will be replaced)
 
+## Quick Start
+
+For complete installation and setup instructions, see **[QUICK_START.md](./QUICK_START.md)**.
+
+**TL;DR** (15 minutes):
+1. Start infrastructure: `docker compose up -d`
+2. Configure environment: `cp .env.example .env` (add your OpenAI API key)
+3. Install dependencies: `poetry install`
+4. Run ingestion: `PYTHONPATH=. poetry run python backend/ingest.py` (30-60 min, one-time)
+5. Start LangGraph: `langgraph dev --no-browser --port 2024`
+6. Configure Claude Desktop MCP (see [QUICK_START.md](./QUICK_START.md#6-configuration-claude-desktop-2-min))
+
+**Verification**: In Claude Desktop, ask `"Check LangChain expert status"` - should show 15,061 documents indexed.
+
+## Troubleshooting
+
+For common issues and solutions, see **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)**.
+
+**Most Common Issues**:
+- **404 Not Found /invoke**: Use LangGraph SDK `client.runs.stream()`, not httpx POST (see [Issue 4](#issue-4-langgraph-api---correct-invocation-pattern-critical))
+- **Slow responses (> 60s)**: Normal for HERO (Sonnet 4.5) on complex questions; use Llama 3.3 70B for speed
+- **Hallucinations**: PNL anti-hallucination wrappers active by default (see [docs/mcp_development/DOCUMENTATION_WRAPPERS_PNL.md](./docs/mcp_development/DOCUMENTATION_WRAPPERS_PNL.md))
+- **Connection refused**: Ensure `langgraph dev` running on port 2024 and Docker containers started
+
 ## Essential Commands
 
 ### Backend (Python/Poetry)
@@ -220,7 +244,7 @@ LANGCHAIN_TRACING_V2=false           # Disabled (free tier limitations)
 - Zero cloud coupling (Docker + PostgreSQL + Redis + Weaviate)
 - Full feature parity with cloud deployment
 
-See `ANALYSE_LANGSERVE_VS_MASTER.md` for detailed comparison.
+See `docs/research/architecture/ANALYSE_LANGSERVE_VS_MASTER.md` for detailed comparison.
 
 ## Known Issues & Solutions
 
@@ -1254,5 +1278,106 @@ Groq Llama 3.1 8B Instant (with wrapper):
 - [ ] Verify DeepSeek returns actual content (not empty)
 - [ ] Generate updated comparison report with corrected data
 - [ ] Update MCP server model recommendations if needed
+
+### October 3, 2025: Documentation Organization & Repository Cleanup
+
+**Trigger:** After completing HERO vs PRAGMATIC benchmark (HERO wins 8.7/10 vs 6.4/10), repository had 30+ markdown files scattered at root level, no Quick Start guide, and no consolidated troubleshooting documentation.
+
+**Challenges Identified:**
+1. **Scattered documentation**: 30+ .md files at root made navigation difficult
+2. **Missing onboarding**: No Quick Start guide for new users
+3. **Fragmented troubleshooting**: Issues documented across multiple files
+4. **Prescriptive vs descriptive mismatch**: Documentation described ideal setup (docker-compose) that didn't match actual implementation (individual docker run commands)
+5. **Missing infrastructure files**: No docker-compose.yml or .env.example templates
+
+**7-Phase Reorganization Plan Executed:**
+
+**Phase 1: Snapshot Commit (Completed)**
+- Created commit 8bd0107 documenting complete state before reorganization
+- Captured: 23 files (9 .md + 2 wrappers + 5 JSON + 7 others)
+- Verified by sub-agent: All files properly staged, commit message comprehensive
+
+**Phase 2: Create Quick Start & Troubleshooting Guides (Completed)**
+- ✅ Created `QUICK_START.md`:
+  - 7-step installation process (Docker, Config, Dependencies, Ingestion, LangGraph, Claude Desktop)
+  - 3 verification tests (status check, simple question, complex question)
+  - Daily usage commands and model comparison table
+  - References to TROUBLESHOOTING.md and other documentation
+- ✅ Created `TROUBLESHOOTING.md`:
+  - 6 major categories (Installation, Connection, Performance, Quality, Infrastructure, Debugging)
+  - 15+ common problems with Symptômes → Cause → Solution format
+  - References to CLAUDE.md Issue 4 for 404 /invoke problem
+  - Documented PNL anti-hallucination wrappers
+- ✅ Created `docker-compose.yml`:
+  - PostgreSQL 16 (port 5432)
+  - Weaviate 1.27.0 (port 8088)
+  - Redis 7 (port 6379)
+  - Persistent volumes for all services
+- ✅ Created `.env.example`:
+  - Sanitized template based on working .env
+  - Clear documentation for required vs optional keys
+  - Support for both local (Docker) and cloud (Weaviate Cloud, Supabase) configurations
+- ✅ Fixed file path references: Updated CONCEPTS.md and MODIFY.md paths (were incorrectly pointing to docs/upstream/)
+- ✅ Corrected default model information: GPT-5 mini (upstream default) vs Claude Sonnet 4.5 (HERO recommended)
+- Verified by sub-agent: All critical fixes applied, documentation production-ready
+
+**Phase 3: Update CLAUDE.md (In Progress)**
+- ✅ Added Quick Start section with TL;DR (6 steps, 15 minutes)
+- ✅ Added Troubleshooting section with most common issues
+- ✅ Added this investigation history entry (October 3, 2025)
+- ⏳ Pending verification by sub-agent
+
+**Phase 4: Organize Documentation Structure (Pending)**
+- Plan: Create clean docs/ structure:
+  ```
+  docs/
+  ├── upstream/        # LangChain original docs (CONCEPTS.md, MODIFY.md, etc.)
+  ├── research/        # R&D archives
+  │   ├── benchmarks/  # HERO vs PRAGMATIC analysis
+  │   ├── architecture/  # Master self-hosting analysis, langserve comparison
+  │   └── debugging/   # API 404 investigation, hallucination analysis
+  └── mcp_development/ # MCP dev history and lessons learned
+  ```
+- Root level: Keep only strategic docs (6 files: README.md, CLAUDE.md, QUICK_START.md, TROUBLESHOOTING.md, CHANGELOG.md, key analyses)
+
+**Phase 5: Remove Obsolete Files (Pending)**
+- Evaluate temporary files and R&D artifacts
+- Archive (not delete) files with historical value
+- Remove truly obsolete files (duplicates, failed experiments)
+
+**Phase 6: Commit Organization (Pending)**
+- Create comprehensive commit documenting new structure
+- Update all cross-references between documents
+
+**Phase 7: Final Cleanup Commit (Pending)**
+- Remove any remaining scattered files
+- Verify all references work
+- Final sub-agent verification of complete repository state
+
+**Critical Insight from Phase 2:**
+> **Infrastructure files are as critical as documentation.** Creating docker-compose.yml and .env.example transformed guides from aspirational to actionable. Users can now actually follow steps without immediate blockers.
+
+**Documentation Quality Improvement:**
+- **Before:** 30+ scattered .md files, no onboarding path, fragmented troubleshooting
+- **After (target):** 6 strategic root docs + organized docs/ structure, comprehensive Quick Start, consolidated Troubleshooting
+
+**Sub-Agent Verification Process:**
+- Between each phase, dedicated sub-agent verifies work quality
+- Catches issues like missing infrastructure files, incorrect paths, model configuration discrepancies
+- Ensures production-ready quality before proceeding
+
+**Status**: Phase 3 in progress (updating CLAUDE.md). Phases 4-7 pending.
+
+**Key Lessons:**
+1. **Prescriptive vs descriptive mismatch** is a common documentation failure - always match docs to actual implementation
+2. **Infrastructure files** (docker-compose.yml, .env.example) are as important as written documentation
+3. **Sub-agent verification** between phases catches issues early before they compound
+4. **Systematic reorganization** (7 phases with verification) prevents chaos and ensures quality
+
+**Next Steps:**
+- [ ] Complete Phase 3 (finish CLAUDE.md updates)
+- [ ] Verify Phase 3 with sub-agent
+- [ ] Execute Phases 4-7 (organization, cleanup, commits)
+- [ ] Final verification of complete repository state
 
 **Co-authored-by: Stéphane Wootha Richard <stephane@sawup.fr>**
