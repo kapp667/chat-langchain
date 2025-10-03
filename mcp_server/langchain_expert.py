@@ -58,9 +58,10 @@ async def _get_or_create_thread_id(session_id: Optional[str] = None) -> str:
 
 async def _ask_expert_internal(
     question: str,
-    model: str,
+    model: Optional[str],
     timeout: int,
-    session_id: Optional[str] = None
+    session_id: Optional[str] = None,
+    system_instruction: Optional[str] = None
 ) -> str:
     """Internal function for querying the LangChain expert system.
 
@@ -69,9 +70,10 @@ async def _ask_expert_internal(
 
     Args:
         question: Question to ask
-        model: OpenAI/Anthropic model identifier
+        model: OpenAI/Anthropic model identifier (None = use backend default)
         timeout: Maximum seconds to wait for response
         session_id: Optional session ID for conversation context
+        system_instruction: Optional system-level instruction to guide response depth/style
 
     Returns:
         Expert answer with citations
@@ -83,18 +85,24 @@ async def _ask_expert_internal(
         # Initialize LangGraph SDK client
         client = get_client(url=LANGGRAPH_URL)
 
-        # Prepare input
-        input_data = {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": question
-                }
-            ]
-        }
+        # Prepare input with optional system instruction
+        messages = []
 
-        # Configure models
-        config = {
+        if system_instruction:
+            messages.append({
+                "role": "system",
+                "content": system_instruction
+            })
+
+        messages.append({
+            "role": "user",
+            "content": question
+        })
+
+        input_data = {"messages": messages}
+
+        # Configure models (only if explicitly provided, otherwise use backend defaults)
+        config = {"configurable": {}} if not model else {
             "configurable": {
                 "query_model": model,
                 "response_model": model
@@ -177,34 +185,42 @@ async def ask_langchain_expert(
                  Be specific for best results.
 
         depth: Response depth level (choose based on question complexity):
+               All levels use Claude Sonnet 4.5 with depth controlled via prompt engineering.
 
-            🏃 "quick" - Ultra-fast answers with GPT-4o-mini (~5-10 seconds)
+            🏃 "quick" - CONCISE answers optimized for speed (~22-30 seconds)
                Best for:
                • Simple factual questions ("What is a Runnable?")
                • Quick API lookups ("How to use ChatOpenAI?")
                • Basic concept explanations
-               • When speed is critical
+               • When you need immediate, focused answers
 
-            ⚖️ "standard" - Balanced answers with GPT-5 mini (~10-20 seconds) [DEFAULT]
+               Output: 2-3 paragraphs, 1-2 code examples, brief citations
+
+            ⚖️ "standard" - DETAILED, balanced answers (~35-45 seconds) [DEFAULT]
                Best for:
                • Most questions (80% of use cases)
-               • Detailed explanations with code examples
+               • Detailed explanations with multiple code examples
                • Troubleshooting guidance
                • Best practices questions
                • Integration patterns
 
-            🧠 "deep" - Maximum reasoning with GPT-5 full (~60-180 seconds)
-               ⚠️ WARNING: Maximum 4 minutes due to Claude Desktop timeout
-               If your question times out, try:
-               • Breaking it into smaller, focused questions
-               • Using "standard" mode first for research, then "deep" for synthesis
+               Output: 4-6 paragraphs, 2-4 code examples, comprehensive citations
 
+            🧠 "deep" - EXHAUSTIVE, production-grade analysis (~45-60 seconds)
                Best for:
-               • Complex architecture design (focused questions)
+               • Complex architecture design
                • Multi-step reasoning problems
                • In-depth technical analysis
                • Performance optimization strategies
                • Advanced debugging scenarios
+               • When you need complete mastery of a topic
+
+               Output: 6-10+ paragraphs, 4-8 code examples, architectural guidance
+
+               ⚠️ Note: Maximum 4 minutes timeout due to Claude Desktop limits.
+               If your question is extremely complex and times out:
+               • Break it into focused sub-questions
+               • Use "standard" for research, then "deep" for synthesis
 
         session_id: Optional session ID to maintain conversation context.
                    Use the same ID for follow-up questions to preserve context.
@@ -229,30 +245,95 @@ async def ask_langchain_expert(
         ask_langchain_expert("Explain LangGraph checkpoints", session_id="learning")
         ask_langchain_expert("How to use PostgreSQL saver?", session_id="learning")
     """
-    # Configuration map for different depth levels
+    # Configuration map for different depth levels with prompt engineering
+    # All levels use Sonnet 4.5 (backend default) with depth controlled via system instructions
     depth_config = {
         "quick": {
-            "model": "openai/gpt-4o-mini",
-            "timeout": 60
+            "model": None,  # Use backend default (Sonnet 4.5)
+            "timeout": 90,  # Sonnet 4.5 typical: 22-30s for simple questions
+            "system_instruction": """You are providing a QUICK, CONCISE answer optimized for speed.
+
+CONSTRAINTS:
+• Maximum 2-3 paragraphs total
+• Focus on essential information only
+• Skip detailed explanations unless critical
+• Provide 1-2 code examples maximum (only if directly answering the question)
+• Brief citations (just source names, no URLs needed)
+
+STYLE:
+• Direct and to-the-point
+• No preamble or lengthy introductions
+• Answer the core question immediately
+
+Remember: The user needs a fast answer. Prioritize clarity over completeness."""
         },
         "standard": {
-            "model": "openai/gpt-5-mini-2025-08-07",
-            "timeout": 120
+            "model": None,  # Use backend default (Sonnet 4.5)
+            "timeout": 120,  # Sonnet 4.5 typical: 35-45s for moderate questions
+            "system_instruction": """You are providing a DETAILED, BALANCED answer with comprehensive coverage.
+
+GUIDELINES:
+• Provide 4-6 well-structured paragraphs
+• Include multiple code examples (2-4) showing different approaches
+• Explain both the 'how' and 'why' behind recommendations
+• Cover edge cases and common pitfalls
+• Include citations with source references
+
+STRUCTURE:
+• Start with a clear, direct answer to the question
+• Follow with implementation details and code examples
+• End with best practices or additional considerations
+
+STYLE:
+• Professional and thorough
+• Balance depth with readability
+• Assume intermediate-level familiarity with LangChain concepts
+
+Remember: This is the default mode - aim for production-ready guidance."""
         },
         "deep": {
-            "model": "openai/gpt-5-2025-08-07",
-            "timeout": 240  # 4 minutes (Claude Desktop client limit)
+            "model": None,  # Use backend default (Sonnet 4.5)
+            "timeout": 240,  # 4 minutes (Claude Desktop client limit) - Sonnet 4.5 typical: 45-50s for complex
+            "system_instruction": """You are providing an IN-DEPTH, EXHAUSTIVE analysis with maximum thoroughness.
+
+EXPECTATIONS:
+• Comprehensive, production-grade explanation (6-10+ paragraphs)
+• Multiple detailed code examples (4-8) covering:
+  - Basic implementation
+  - Advanced patterns
+  - Error handling
+  - Performance optimization
+  - Real-world production scenarios
+• Architectural considerations and design patterns
+• Complete coverage of edge cases, limitations, and trade-offs
+• Detailed citations with specific source references
+
+STRUCTURE:
+• Executive summary: Direct answer with key takeaways
+• Core implementation: Step-by-step with code
+• Advanced topics: Optimization, scaling, error handling
+• Architecture: Design patterns, best practices, anti-patterns
+• Complete working examples when applicable
+
+STYLE:
+• Expert-level depth and precision
+• Assume the user needs production-ready, battle-tested guidance
+• Include context about when to use vs. not use certain approaches
+• Reference related LangChain/LangGraph concepts for completeness
+
+Remember: This is for complex, critical questions where the user needs comprehensive mastery of the topic."""
         }
     }
 
     config = depth_config[depth]
 
-    # Call internal implementation
+    # Call internal implementation with depth-specific system instruction
     return await _ask_expert_internal(
         question=question,
         model=config["model"],
         timeout=config["timeout"],
-        session_id=session_id
+        session_id=session_id,
+        system_instruction=config["system_instruction"]
     )
 
 
