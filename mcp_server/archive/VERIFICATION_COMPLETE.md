@@ -201,8 +201,8 @@ langgraph dev --no-browser --port 2024 > /tmp/langgraph_dev.log 2>&1 &
 - `mcp_server/QUICK_START.md` - Guide rapide (92 lignes)
 
 ### Tests
-- `mcp_server/test_mcp.py` - Tests complets
-- `mcp_server/test_model_verification.py` - Vérification modèle
+- `mcp_server/archive/test_mcp.py` - Tests complets
+- `mcp_server/archive/test_model_verification.py` - Vérification modèle
 
 ---
 

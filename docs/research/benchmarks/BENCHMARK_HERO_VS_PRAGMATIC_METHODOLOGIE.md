@@ -263,10 +263,10 @@ POST http://localhost:2024/invoke
 1. Lancer les deux benchmarks en parallèle (scripts indépendants)
    ```bash
    # Terminal 1
-   poetry run python mcp_server/benchmark_hero_vs_pragmatic.py --model llama-3.3-70b-groq
+   poetry run python mcp_server/archive/benchmark_hero_vs_pragmatic.py --model llama-3.3-70b-groq
 
    # Terminal 2 (délai 3s)
-   poetry run python mcp_server/benchmark_hero_vs_pragmatic.py --model sonnet45
+   poetry run python mcp_server/archive/benchmark_hero_vs_pragmatic.py --model sonnet45
    ```
 
 2. Chaque benchmark exécute 6 questions séquentiellement

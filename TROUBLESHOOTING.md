@@ -369,7 +369,7 @@ config = {
 }
 ```
 
-**Benchmark qualité:** Voir [ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md](./ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md)
+**Benchmark qualité:** Voir [docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md](./docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md)
 
 ---
 
@@ -592,7 +592,7 @@ curl -H "Authorization: Bearer YOUR_KEY" \
 - **Installation:** [QUICK_START.md](./QUICK_START.md)
 - **Architecture:** [CLAUDE.md](./CLAUDE.md)
 - **Wrappers PNL:** [docs/mcp_development/DOCUMENTATION_WRAPPERS_PNL.md](./docs/mcp_development/DOCUMENTATION_WRAPPERS_PNL.md)
-- **Benchmark qualité:** [ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md](./ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md)
+- **Benchmark qualité:** [docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md](./docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md)
 
 ### Problème Non Résolu?
 

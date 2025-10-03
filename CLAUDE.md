@@ -217,8 +217,8 @@ LANGCHAIN_TRACING_V2=false           # Disabled (free tier limitations)
 ## Testing Strategy
 
 - Evaluation tests in `backend/tests/evals/`
-- MCP server tests in `mcp_server/test_mcp.py`
-- Model verification in `mcp_server/test_model_verification.py`
+- MCP server tests in `mcp_server/archive/test_mcp.py`
+- Model verification in `mcp_server/archive/test_model_verification.py`
 - Integration testing through graph execution
 
 ## Important Notes
@@ -365,8 +365,8 @@ if last_messages:
 4. **Extract from chunk.data** - last AI message contains response
 
 **Reference Implementation:**
-- See `mcp_server/benchmark_models.py` lines 136-207 for complete working example
-- See `mcp_server/benchmark_hero_vs_pragmatic.py` for correct pattern after fix
+- See `mcp_server/archive/benchmark_models.py` lines 136-207 for complete working example
+- See `mcp_server/archive/benchmark_hero_vs_pragmatic.py` for correct pattern after fix
 
 **Historical Note (October 3, 2025):**
 - Initial `benchmark_hero_vs_pragmatic.py` incorrectly used POST `/invoke`
@@ -518,7 +518,7 @@ async for chunk in client.runs.stream(
 
 **Testing and Validation:**
 
-**Test Script: `mcp_server/test_mcp.py`**
+**Test Script: `mcp_server/archive/test_mcp.py`**
 
 Three test scenarios validated:
 1. **System status check** - Verified connectivity
@@ -592,8 +592,8 @@ WatchFiles detected changes in 'backend/retrieval_graph/configuration.py'. Reloa
    - Configuration summary
    - Example usage patterns
 
-5. **`mcp_server/test_mcp.py`** - Automated test suite
-6. **`mcp_server/test_model_verification.py`** - Model validation
+5. **`mcp_server/archive/test_mcp.py`** - Automated test suite
+6. **`mcp_server/archive/test_model_verification.py`** - Model validation
 
 **Deployment Status:**
 

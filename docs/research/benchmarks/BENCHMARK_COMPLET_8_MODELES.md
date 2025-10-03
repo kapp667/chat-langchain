@@ -703,10 +703,10 @@ COST_PER_MILLION = "$1.37"
 
 ```bash
 # Test simple modèle
-poetry run python mcp_server/benchmark_models.py --model sonnet45
+poetry run python mcp_server/archive/benchmark_models.py --model sonnet45
 
 # Test tous modèles (parallèle)
-poetry run python mcp_server/benchmark_models.py --all
+poetry run python mcp_server/archive/benchmark_models.py --all
 
 # Analyse qualité GPT-5
 poetry run python mcp_server/compare_quality.py --model-a gpt5-full --model-b gpt5-mini

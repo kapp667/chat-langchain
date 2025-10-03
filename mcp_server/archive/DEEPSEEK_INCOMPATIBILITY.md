@@ -221,7 +221,7 @@ DeepSeek is "actively working to optimize" the empty content issue.
 - `mcp_server/results/deepseek-chat_results.json` - Chat test (empty responses)
 
 ### Code
-- `mcp_server/benchmark_models.py` - Benchmark script (lines 52-58: DeepSeek config)
+- `mcp_server/archive/benchmark_models.py` - Benchmark script (lines 52-58: DeepSeek config)
 - `backend/retrieval_graph/researcher_graph/graph.py` - Backend structured output (lines 40-53)
 
 ---

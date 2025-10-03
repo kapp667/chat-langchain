@@ -358,7 +358,7 @@ DeepSeek's backend incompatibility highlights the importance of:
 ## Testing Methodology
 
 ### Speed Tests
-- **Tool**: `mcp_server/benchmark_models.py`
+- **Tool**: `mcp_server/archive/benchmark_models.py`
 - **Questions**: 3 (simple, moderate, complex)
 - **Metrics**: Response time, chunk count, response length
 - **Limit**: 240s (Claude Desktop MCP timeout)
@@ -397,7 +397,7 @@ DeepSeek's backend incompatibility highlights the importance of:
 - `mcp_server/FINAL_BENCHMARK_REPORT.md` - This document
 
 ### Code
-- `mcp_server/benchmark_models.py` - Benchmark script (426 lines)
+- `mcp_server/archive/benchmark_models.py` - Benchmark script (426 lines)
 - `backend/retrieval_graph/researcher_graph/graph.py` - Backend structured output
 
 ### Logs

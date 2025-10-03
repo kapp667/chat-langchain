@@ -207,8 +207,8 @@ Utilise ask_langchain_expert_advanced : "Conçois une architecture production-gr
 - `mcp_server/QUICK_START.md` - Guide test rapide
 
 **Tests**
-- `mcp_server/test_mcp.py` - Tests complets
-- `mcp_server/test_model_verification.py` - Vérification modèle
+- `mcp_server/archive/test_mcp.py` - Tests complets
+- `mcp_server/archive/test_model_verification.py` - Vérification modèle
 
 ---
 

@@ -449,10 +449,10 @@ Pour l'objectif MCP (chatbot LangChain pour développement) :
 
 ```bash
 # Test Llama 3.1 8B
-poetry run python mcp_server/benchmark_models.py --model llama-3.1-8b-groq
+poetry run python mcp_server/archive/benchmark_models.py --model llama-3.1-8b-groq
 
 # Test Llama 3.3 70B
-poetry run python mcp_server/benchmark_models.py --model llama-3.3-70b-groq
+poetry run python mcp_server/archive/benchmark_models.py --model llama-3.3-70b-groq
 
 # Résultats dans :
 # mcp_server/results/llama-3.1-8b-groq_results.json

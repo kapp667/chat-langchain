@@ -257,7 +257,7 @@ Le MCP server supporte plusieurs modèles LLM :
 | Llama 3.3 70B (Groq) | PRAGMATIC ultra-rapide | 9s | 4.6/5 |
 | DeepSeek Chat | Économique | 45s | 4.4/5 |
 
-> **Recommandation:** Configurer Sonnet 4.5 comme default pour qualité maximale (5/5). Qualité supérieure justifie le délai (voir [ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md](./ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md)). Configuration par défaut upstream utilise GPT-5 mini.
+> **Recommandation:** Configurer Sonnet 4.5 comme default pour qualité maximale (5/5). Qualité supérieure justifie le délai (voir [docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md](./docs/research/benchmarks/ANALYSE_QUALITATIVE_HERO_VS_PRAGMATIC.md)). Configuration par défaut upstream utilise GPT-5 mini.
 
 ---
 

@@ -301,7 +301,7 @@ Assumptions:
 - GPT-5 Full results: `mcp_server/results/gpt5-full_results.json`
 - GPT-5 Mini results: `mcp_server/results/gpt5-mini_results.json`
 - Claude Sonnet 4.5 results: `mcp_server/results/sonnet45_results.json`
-- Benchmark script: `mcp_server/benchmark_models.py`
+- Benchmark script: `mcp_server/archive/benchmark_models.py`
 
 ---
 

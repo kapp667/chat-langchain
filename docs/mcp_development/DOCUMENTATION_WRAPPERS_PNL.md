@@ -592,8 +592,8 @@ async def generate_queries_newprovider(
 
 ```bash
 # 1. Test hallucinations (benchmark complet)
-poetry run python mcp_server/benchmark_models.py --model llama-3.3-70b-groq
-poetry run python mcp_server/benchmark_models.py --model deepseek-chat
+poetry run python mcp_server/archive/benchmark_models.py --model llama-3.3-70b-groq
+poetry run python mcp_server/archive/benchmark_models.py --model deepseek-chat
 
 # 2. Vérifier 0% hallucinations dans résultats
 cat mcp_server/results/llama-3.3-70b-groq_results.json | jq '.results[] | .response_full' | grep -i "migrate_checkpoint"
@@ -664,7 +664,7 @@ langchain-deepseek = "^0.0.3"  # Package officiel
 poetry install  # Installe langchain-groq, langchain-deepseek, etc.
 
 # MCP Server
-poetry run python mcp_server/benchmark_models.py --model llama-3.3-70b-groq
+poetry run python mcp_server/archive/benchmark_models.py --model llama-3.3-70b-groq
 ```
 
 ### 7.3 Variables d'Environnement
