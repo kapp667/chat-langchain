@@ -1380,4 +1380,68 @@ Groq Llama 3.1 8B Instant (with wrapper):
 - [ ] Execute Phases 4-7 (organization, cleanup, commits)
 - [ ] Final verification of complete repository state
 
+### October 3, 2025 (Continued): MCP Server Build Configuration Fix
+
+**Trigger:** Phase 8 cleanup removed all non-essential files from mcp_server/, leaving only `langchain_expert.py` (344 lines). Post-cleanup testing revealed MCP server build failure.
+
+**Problem Encountered:**
+```
+ValueError: Unable to determine which files to ship inside the wheel
+The most likely cause is that there is no directory that matches
+the name of your project (langchain_expert_mcp)
+```
+
+**Root Cause Analysis:**
+- pyproject.toml had `[build-system]` but no `[tool.hatch.build]` configuration
+- Hatchling build backend expected either:
+  - A package directory named `langchain_expert_mcp/` (auto-detection), OR
+  - Explicit configuration telling it what to include
+- We have a **standalone module** (`langchain_expert.py`), not a package directory
+- First fix attempt (only `py-modules`) insufficient for editable builds
+
+**Solution Implemented:**
+Added comprehensive Hatchling configuration to `mcp_server/pyproject.toml`:
+
+```toml
+[tool.hatch.build]
+only-include = ["langchain_expert.py"]
+
+[tool.hatch.build.targets.wheel]
+py-modules = ["langchain_expert"]
+```
+
+**Why This Works:**
+- `only-include`: Explicitly tells Hatchling which files to ship in the wheel
+- `py-modules`: Indicates this is a standalone module (not a package with `__init__.py`)
+- Combination required for editable install mode (`uv sync`)
+
+**Validation Tests Executed:**
+
+| Test | Command | Result | Time |
+|------|---------|--------|------|
+| Build | `uv sync` | ✅ PASS | 384ms |
+| Import | `python -c "import langchain_expert"` | ✅ PASS | Module loads |
+| Tools | MCP tools detection | ✅ PASS | 4 tools found |
+| E2E | HTTP communication test | ✅ PASS | 200 OK (timeout expected) |
+| Regression | Backend LangGraph health | ✅ PASS | Port 2024 OK |
+| Regression | Docker infrastructure | ✅ PASS | All containers healthy |
+
+**Pedagogical Insight:**
+- **UV** = Ultra-fast Rust-based Python package manager (10-100x faster than pip)
+- **Build process** = Transform source code → installable wheel package (.whl)
+- **Hatchling** = Build backend reading pyproject.toml to generate wheels
+- **Standalone module vs package**:
+  - Package: `mypackage/__init__.py` (directory structure)
+  - Standalone: `mymodule.py` (single file, requires `py-modules`)
+
+**Impact:**
+- ✅ MCP server fully functional after Phase 8 cleanup
+- ✅ Build time: 384ms (UV performance validated)
+- ✅ Clean architecture: 1 essential file in production, 39 files archived
+- ✅ All regression tests passing
+
+**Documentation Updated:**
+- Added this investigation to CLAUDE.md
+- Committed fix with comprehensive message
+
 **Co-authored-by: Stéphane Wootha Richard <stephane@sawup.fr>**

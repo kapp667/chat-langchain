@@ -34,3 +34,9 @@ ignore = []
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.hatch.build]
+only-include = ["langchain_expert.py"]
+
+[tool.hatch.build.targets.wheel]
+py-modules = ["langchain_expert"]
