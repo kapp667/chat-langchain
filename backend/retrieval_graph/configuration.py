@@ -15,14 +15,14 @@ class AgentConfiguration(BaseConfiguration):
     # models
 
     query_model: str = field(
-        default="openai/gpt-5",
+        default="openai/gpt-5-mini-2025-08-07",
         metadata={
             "description": "The language model used for processing and refining queries. Should be in the form: provider/model-name."
         },
     )
 
     response_model: str = field(
-        default="openai/gpt-5",
+        default="openai/gpt-5-mini-2025-08-07",
         metadata={
             "description": "The language model used for generating responses. Should be in the form: provider/model-name."
         },

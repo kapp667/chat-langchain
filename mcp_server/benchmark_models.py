@@ -28,6 +28,13 @@ ASSISTANT_ID = "chat"
 
 # Model configurations
 MODELS = {
+    "gpt5-nano": {
+        "id": "openai/gpt-5-nano-2025-08-07",
+        "name": "GPT-5 Nano",
+        "description": "OpenAI GPT-5 Nano (ultra-fast, basic reasoning)",
+        "expected_speed": "ultra-fast (~10-30s complex)",
+        "expected_quality": "good"
+    },
     "gpt5-full": {
         "id": "openai/gpt-5-2025-08-07",
         "name": "GPT-5 Full",
@@ -54,6 +61,27 @@ MODELS = {
         "name": "DeepSeek Chat (V3)",
         "description": "DeepSeek V3.2-Exp (supports tool calling & structured output)",
         "expected_speed": "fast (~60-120s complex)",
+        "expected_quality": "excellent"
+    },
+    "gemma2-9b-groq": {
+        "id": "groq/gemma2-9b-it",
+        "name": "Gemma2 9B (Groq)",
+        "description": "Google Gemma2 9B on Groq (ultra-fast inference)",
+        "expected_speed": "ultra-fast (~10-30s complex)",
+        "expected_quality": "good"
+    },
+    "llama-3.1-8b-groq": {
+        "id": "groq/llama-3.1-8b-instant",
+        "name": "Llama 3.1 8B Instant (Groq)",
+        "description": "Meta Llama 3.1 8B on Groq (ultra-fast, 131K context)",
+        "expected_speed": "ultra-fast (~10-30s complex)",
+        "expected_quality": "very good"
+    },
+    "llama-3.3-70b-groq": {
+        "id": "groq/llama-3.3-70b-versatile",
+        "name": "Llama 3.3 70B Versatile (Groq)",
+        "description": "Meta Llama 3.3 70B on Groq (agentic reasoning, 131K context)",
+        "expected_speed": "fast (~30-60s complex)",
         "expected_quality": "excellent"
     }
 }

@@ -76,6 +76,11 @@ def load_chat_model(fully_specified_name: str) -> BaseChatModel:
         provider = ""
         model = fully_specified_name
 
+    # Groq models require custom wrapper (not supported by init_chat_model)
+    if provider == "groq":
+        from backend.groq_wrapper import load_groq_model
+        return load_groq_model(model)
+
     # GPT-5 models only support temperature=1 (default), other models use 0
     temperature = 1 if model.startswith("gpt-5") else 0
     model_kwargs = {"temperature": temperature, "stream_usage": True}

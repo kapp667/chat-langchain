@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-10-02T18:23:39.942489",
+  "model_key": "gemma2-9b-groq",
+  "model_name": "Gemma2 9B (Groq)",
+  "model_id": "groq/gemma2-9b-it",
+  "model_description": "Google Gemma2 9B on Groq (ultra-fast inference)",
+  "langgraph_url": "http://localhost:2024",
+  "total_tests": 3,
+  "successful_tests": 3,
+  "failed_tests": 0,
+  "within_limit_tests": 3,
+  "statistics": {
+    "average_time": 4.65885861714681,
+    "min_time": 3.877470016479492,
+    "max_time": 5.31331992149353,
+    "average_minutes": 0.0776476436191135,
+    "min_minutes": 0.0646245002746582,
+    "max_minutes": 0.08855533202489217
+  },
+  "results": [
+    {
+      "test_id": "test_1_simple",
+      "complexity": "simple",
+      "question": "What is LangGraph and how does it differ from LangChain?",
+      "success": true,
+      "elapsed_time": 5.31331992149353,
+      "elapsed_minutes": 0.08855533202489217,
+      "within_limit": true,
+      "chunk_count": 2,
+      "response_length": 0,
+      "start_time": "2025-10-02T18:23:15.946705",
+      "end_time": "2025-10-02T18:23:21.260024",
+      "response_full": ""
+    },
+    {
+      "test_id": "test_2_moderate",
+      "complexity": "moderate",
+      "question": "Explain how LangGraph checkpoints work with PostgreSQL, including the AsyncPostgresSaver class and how to handle migration between checkpoint versions.",
+      "success": true,
+      "elapsed_time": 4.785785913467407,
+      "elapsed_minutes": 0.07976309855779012,
+      "within_limit": true,
+      "chunk_count": 2,
+      "response_length": 0,
+      "start_time": "2025-10-02T18:23:26.269552",
+      "end_time": "2025-10-02T18:23:31.055338",
+      "response_full": ""
+    },
+    {
+      "test_id": "test_3_complex",
+      "complexity": "complex",
+      "question": "Design a production-grade multi-agent LangGraph system with the following requirements: (1) human-in-the-loop approval for critical decisions, (2) PostgreSQL checkpoints for state persistence, (3) error recovery and retry logic, (4) observability with LangSmith, and (5) deployment strategy. Provide architectural decisions and code examples.",
+      "success": true,
+      "elapsed_time": 3.877470016479492,
+      "elapsed_minutes": 0.0646245002746582,
+      "within_limit": true,
+      "chunk_count": 2,
+      "response_length": 0,
+      "start_time": "2025-10-02T18:23:36.064985",
+      "end_time": "2025-10-02T18:23:39.942455",
+      "response_full": ""
+    }
+  ]
+}

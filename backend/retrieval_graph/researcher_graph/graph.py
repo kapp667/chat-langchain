@@ -17,6 +17,7 @@ from backend.retrieval_graph.configuration import AgentConfiguration
 from backend.retrieval_graph.researcher_graph.state import QueryState, ResearcherState
 from backend.utils import load_chat_model
 from backend.deepseek_wrapper import generate_queries_deepseek, enhance_prompt_for_json
+from backend.groq_wrapper import generate_queries_groq
 
 
 async def generate_queries(
@@ -55,6 +56,25 @@ async def generate_queries(
         except Exception as e:
             # Fallback: return original question as single query
             print(f"DeepSeek query generation failed: {e}")
+            return {"queries": [state.question]}
+
+    # Special handling for Groq models (tool calling issues with structured output)
+    if "groq" in configuration.query_model.lower():
+        messages = [
+            {"role": "system", "content": configuration.generate_queries_system_prompt},
+            {"role": "human", "content": state.question},
+        ]
+        try:
+            # Use Groq-specific JSON mode wrapper
+            response = await generate_queries_groq(
+                messages,
+                configuration.query_model,
+                Response
+            )
+            return {"queries": response["queries"]}
+        except Exception as e:
+            # Fallback: return original question as single query
+            print(f"Groq query generation failed: {e}")
             return {"queries": [state.question]}
 
     # Standard logic for other models
