@@ -251,6 +251,105 @@ else:
     weaviate_client = weaviate.connect_to_weaviate_cloud(...)
 ```
 
+### Issue 4: LangGraph API - Correct Invocation Pattern (CRITICAL)
+
+**Problem:** LangGraph server does NOT expose a REST `/invoke` endpoint
+
+**Symptoms:**
+```
+Client error '404 Not Found' for url 'http://localhost:2024/invoke'
+```
+
+**Root Cause:**
+- LangGraph server uses SDK-based API, not direct HTTP POST
+- Attempting `httpx.post(f"{url}/invoke", json=...)` will fail with 404
+
+**❌ WRONG Pattern (will fail):**
+```python
+import httpx
+
+async with httpx.AsyncClient() as client:
+    response = await client.post(
+        f"{LANGGRAPH_URL}/invoke",  # ← This endpoint doesn't exist!
+        json={"input": {...}, "config": {...}}
+    )
+```
+
+**✅ CORRECT Pattern:**
+```python
+from langgraph_sdk import get_client
+
+# Initialize client
+client = get_client(url=LANGGRAPH_URL)
+
+# Create thread
+thread = await client.threads.create()
+thread_id = thread["thread_id"]
+
+# Prepare input
+input_data = {
+    "messages": [
+        {"role": "user", "content": question}
+    ]
+}
+
+# Configure model
+config = {
+    "configurable": {
+        "query_model": model_id,
+        "response_model": model_id
+    }
+}
+
+# Stream response
+response_text = ""
+last_messages = []
+chunk_count = 0
+
+async for chunk in client.runs.stream(
+    thread_id,
+    ASSISTANT_ID,  # e.g., "chat"
+    input=input_data,
+    config=config,
+    stream_mode="messages"
+):
+    chunk_count += 1
+
+    # Extract messages
+    if hasattr(chunk, "data") and chunk.data:
+        if isinstance(chunk.data, list):
+            last_messages = chunk.data
+        elif isinstance(chunk.data, dict) and "messages" in chunk.data:
+            last_messages = chunk.data["messages"]
+
+# Extract final response
+if last_messages:
+    for msg in reversed(last_messages):
+        if isinstance(msg, dict):
+            if msg.get("type") == "ai" or msg.get("role") == "assistant":
+                response_text = msg.get("content", "")
+                break
+        elif hasattr(msg, "type") and msg.type == "ai":
+            response_text = msg.content
+            break
+```
+
+**Key Points:**
+1. **Always use `langgraph_sdk.get_client()`** - not httpx/requests
+2. **Create a thread first** - `client.threads.create()`
+3. **Stream with `client.runs.stream()`** - provides real-time updates
+4. **Extract from chunk.data** - last AI message contains response
+
+**Reference Implementation:**
+- See `mcp_server/benchmark_models.py` lines 136-207 for complete working example
+- See `mcp_server/benchmark_hero_vs_pragmatic.py` for correct pattern after fix
+
+**Historical Note (October 3, 2025):**
+- Initial `benchmark_hero_vs_pragmatic.py` incorrectly used POST `/invoke`
+- All 6 tests failed with 404 errors
+- Fixed by switching to LangGraph SDK pattern → 100% success rate
+- Documented to prevent future regression
+
 ## Investigation History & Decisions
 
 ### October 1, 2025: MCP Server Implementation and Integration ✅ **COMPLETED**
@@ -602,6 +701,10 @@ See sections above in this file (lines 389-1262).
 **Model Configuration:**
 - **Default**: `openai/gpt-5-mini-2025-08-07` (query + response)
 - **Advanced**: `openai/gpt-5-2025-08-07` (via `ask_langchain_expert_advanced`)
+- **DeepSeek**: **MUST use `deepseek-reasoner` V3.2-Exp** (not deepseek-chat)
+  - Wrapper enforces `deepseek-reasoner` regardless of config
+  - Reason: 8x higher output limits (64K vs 8K), superior reasoning
+  - See `backend/deepseek_wrapper.py` for implementation
 - **Temperature**: 1 for GPT-5, 0 for others (auto-detected)
 
 **Cost**: $20-50/month (OpenAI usage only)
@@ -689,6 +792,14 @@ def load_chat_model(fully_specified_name: str) -> BaseChatModel:
 **Root Cause**:
 DeepSeek API requires explicit `response_format={'type': 'json_object'}` parameter, which LangChain's generic `with_structured_output()` doesn't provide.
 
+**CRITICAL: Project requires `deepseek-reasoner` (V3.2-Exp Thinking Mode)**
+
+Our wrapper ALWAYS uses `deepseek-reasoner` instead of `deepseek-chat` because:
+- **8x higher output limits**: 64K max vs 8K for deepseek-chat
+- **4x higher default**: 32K vs 4K for deepseek-chat
+- **Superior reasoning**: Thinking mode provides better quality for complex questions
+- **Cost**: Slightly higher but justified by output quality ($1.40/M output vs $0.42/M)
+
 **Solution**:
 Create a custom wrapper that:
 1. Sets explicit JSON mode: `response_format={'type': 'json_object'}`
@@ -704,14 +815,20 @@ def load_deepseek_for_structured_output(
     model_name: str,
     schema: Optional[Type[BaseModel]] = None
 ) -> BaseChatModel:
-    """Load DeepSeek model configured for structured output."""
-    model_id = model_name.split("/", maxsplit=1)[1] if "/" in model_name else model_name
+    """Load DeepSeek model configured for structured output.
 
-    # CRITICAL: Explicit JSON mode for DeepSeek
+    ALWAYS uses deepseek-reasoner (V3.2-Exp) regardless of model_name parameter.
+    """
+    # ALWAYS use deepseek-reasoner (project requirement)
+    # Provides 8x higher output limits (64K vs 8K) and superior reasoning
+    model_id = "deepseek-reasoner"
+
+    # CRITICAL: Explicit JSON mode + maximum tokens for DeepSeek
     model = ChatDeepSeek(
         model=model_id,
         response_format={'type': 'json_object'},  # Required for DeepSeek
-        temperature=0
+        temperature=0,
+        max_tokens=64000  # deepseek-reasoner max (vs 8K for deepseek-chat)
     )
 
     return model
@@ -881,6 +998,198 @@ curl -s http://127.0.0.1:2024/assistants/search -X POST -H "Content-Type: applic
 ```
 
 **When to Apply**: Debugging connection issues between client code and LangGraph server
+
+### Pattern 6: Provider-Specific Integration in `graph.py`
+
+**Problem**: Newer LLM providers (DeepSeek, Groq) not supported by LangChain's `init_chat_model()` or have specific requirements for structured outputs.
+
+**Solution**: Add provider detection in `backend/retrieval_graph/researcher_graph/graph.py`:
+
+```python
+# Location: backend/retrieval_graph/researcher_graph/graph.py
+# Function: generate_queries()
+
+async def generate_queries(state: ResearcherState, *, config: RunnableConfig):
+    """Generate search queries based on the question."""
+
+    class Response(TypedDict):
+        queries: list[str]
+
+    configuration = AgentConfiguration.from_runnable_config(config)
+
+    # Special handling for DeepSeek models (require explicit JSON mode)
+    if "deepseek" in configuration.query_model.lower():
+        messages = [
+            {"role": "system", "content": configuration.generate_queries_system_prompt},
+            {"role": "human", "content": state.question},
+        ]
+        try:
+            response = await generate_queries_deepseek(
+                messages,
+                configuration.query_model,
+                Response
+            )
+            return {"queries": response["queries"]}
+        except Exception as e:
+            # Fallback: return original question as single query
+            print(f"DeepSeek query generation failed: {e}")
+            return {"queries": [state.question]}
+
+    # Standard logic for other models (OpenAI, Anthropic, Google, Groq with wrapper)
+    structured_output_kwargs = (
+        {"method": "function_calling"} if "openai" in configuration.query_model else {}
+    )
+    model = load_chat_model(configuration.query_model).with_structured_output(
+        Response, **structured_output_kwargs
+    )
+    # ... rest of standard logic
+```
+
+**Modifications Made (October 2, 2025)**:
+
+1. **Line 19**: Added import for DeepSeek wrapper functions
+2. **Lines 42-58**: Added DeepSeek-specific branch with custom wrapper call
+3. **Provider detection logic**: Uses `configuration.query_model.lower()` to check for "deepseek"
+
+**Files Modified**:
+- `backend/retrieval_graph/researcher_graph/graph.py`
+- `backend/utils.py` (Groq detection added at line 79-82)
+- `backend/deepseek_wrapper.py` (created)
+- `backend/groq_wrapper.py` (created)
+
+**When to Review/Refactor**:
+
+⚠️ **These modifications may become obsolete when:**
+1. LangChain officially supports DeepSeek/Groq in `init_chat_model()`
+2. DeepSeek implements `json_schema` mode (currently only supports `json_object`)
+3. LangGraph introduces provider-agnostic structured output handling
+
+**Maintenance Notes**:
+- Check LangChain changelogs for DeepSeek/Groq integration updates
+- If `init_chat_model()` adds native support, remove custom branches and wrappers
+- Keep wrappers as reference for similar provider-specific needs
+- Test after LangChain major version upgrades (0.3 → 0.4, etc.)
+
+**Why These Modifications Were Necessary**:
+- DeepSeek: Does NOT support `json_schema` mode required by LangChain's `with_structured_output()`
+- Groq: NOT recognized by `init_chat_model()` as valid provider (as of LangChain 0.3.x)
+- Both require workarounds until official LangChain integration
+
+### Pattern 7: Groq Tool Calling Limitations & JSON Mode Workaround
+
+**Problem**: Groq models fail with `with_structured_output()` in LangGraph, despite official LangChain support via `langchain-groq`.
+
+**Error Encountered**:
+```json
+{
+  "error": "APIError",
+  "message": "Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details."
+}
+```
+
+**Root Cause Analysis** (October 2, 2025):
+
+Based on deep research into LangChain/Groq integration:
+
+1. **Package Status**: `langchain-groq` officially exists and is maintained
+   - Package: `langchain-groq` (Python) / `@langchain/groq` (JS)
+   - Class: `ChatGroq` inherits from `BaseChatModel`
+   - Features: Streaming ✓, Async ✓, Tool Calling ✓*, Structured Output ✓*
+
+2. **Known Limitation**: Tool calling in Groq has **reliability issues** in LangGraph context
+   - Works in simple use cases
+   - Fails in multi-step graphs (like researcher_graph)
+   - Error: "Failed to call a function" without detailed error
+
+3. **Documented Workaround**: Use JSON mode instead of tool calling
+   - Groq supports `response_format={'type': 'json_object'}` natively
+   - Similar approach as DeepSeek (both lack `json_schema` mode)
+
+**Solution Implemented**: Groq-specific JSON mode wrapper (`backend/groq_wrapper.py`)
+
+```python
+# backend/groq_wrapper.py
+async def generate_queries_groq(messages, model_id, schema):
+    """Generate queries using Groq with JSON mode workaround."""
+    model = ChatGroq(
+        model=model_name,
+        temperature=0,
+        model_kwargs={"response_format": {"type": "json_object"}}
+    )
+
+    # Enhance system prompt with JSON schema instructions
+    enhanced_content = f"""{system_message}
+
+CRITICAL: You MUST respond with valid JSON only in this exact format:
+{schema_description}
+
+Do not include any text outside the JSON structure."""
+
+    response = await model.ainvoke(enhanced_messages)
+    return json.loads(response.content)
+```
+
+**Integration in graph.py**:
+```python
+# backend/retrieval_graph/researcher_graph/graph.py
+from backend.groq_wrapper import generate_queries_groq
+
+async def generate_queries(state, *, config):
+    # Special handling for Groq models
+    if "groq" in configuration.query_model.lower():
+        response = await generate_queries_groq(
+            messages, configuration.query_model, Response
+        )
+        return {"queries": response["queries"]}
+```
+
+**Supported Groq Models** (October 2025):
+
+| Model | Context | Status | Use Case |
+|-------|---------|--------|----------|
+| **llama-3.1-8b-instant** ⭐ | 131K | Production | Ultra-fast, recommended |
+| llama-3.3-70b-versatile | 131K | Production | High quality, versatile |
+| gemma2-9b-it | 8K | Deprecated → use llama-3.1-8b-instant |
+| deepseek-r1-distill-llama-70b | 131K | Preview | Reasoning (no tools) |
+
+**Performance Results** (Benchmark Test 3 - Complex Question):
+
+```
+Groq Llama 3.1 8B Instant (with wrapper):
+- Time: 8.18s (vs Claude 109s = 13x faster!)
+- Chars: 4,970 (vs Claude 23,805 = 20% length)
+- Chunks: 1,068 (ultra-fast streaming)
+- Quality: Good (architectural overview, lacks production depth)
+```
+
+**Key Findings**:
+- ✅ Groq is **dramatically faster** (8s vs 109s)
+- ✅ JSON mode workaround **works perfectly**
+- ⚠️ Responses are **shorter/less detailed** than Claude
+- ⚠️ Context window OK (131K tokens - no overflow issues)
+
+**When to Use Groq**:
+- **Use for**: Simple/moderate questions requiring speed
+- **Avoid for**: Complex production questions requiring deep implementation details
+- **Sweet spot**: Quick lookups, concept explanations, moderate technical Q&A
+
+**Technical Details**:
+- Groq uses Language Processing Unit (LPU) infrastructure for ultra-low latency
+- `reasoning_format` parameter available for DeepSeek-R1-distill model
+- Batch processing available (50% cost reduction)
+- **Architecture**: Groq ≠ OpenAI (custom BaseChatModel, not BaseChatOpenAI like DeepSeek)
+
+**When to Review/Refactor**:
+⚠️ **Monitor for**:
+1. Official LangGraph support for Groq tool calling (may fix the API error)
+2. `init_chat_model()` adding "groq" as recognized provider
+3. Groq improving tool calling reliability in multi-step scenarios
+
+**Migration Path** (when Groq tool calling is fixed):
+1. Remove Groq branch from `graph.py` (lines 61-78)
+2. Remove `backend/groq_wrapper.py`
+3. Update `backend/utils.py` to use `init_chat_model()` for Groq
+4. Test thoroughly before deploying
 
 ---
 
